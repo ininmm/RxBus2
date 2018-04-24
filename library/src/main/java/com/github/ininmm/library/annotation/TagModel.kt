@@ -3,12 +3,13 @@ package com.github.ininmm.library.annotation
 import android.support.annotation.StringDef
 
 /**
+ * 註解的標籤
  * Created by User
  * on 2018/2/11.
  */
 class TagModel {
     companion object {
-        const val DEFAULT = "rxbus_default_tag"
+        const val DEFAULT = "RxBusDefaultTag"
     }
     @Retention(AnnotationRetention.RUNTIME)
     @Target(AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY_GETTER, AnnotationTarget.PROPERTY_SETTER)
