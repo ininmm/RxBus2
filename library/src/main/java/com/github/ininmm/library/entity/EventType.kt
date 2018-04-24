@@ -1,6 +1,13 @@
 package com.github.ininmm.library.entity
 
+import com.github.ininmm.library.annotation.Produce
+import com.github.ininmm.library.annotation.Subscribe
+
 /**
+ * 在調用反射查找註解方法時，會將結果存在Map中，此類是Map的Key值
+ *
+ * @param tag 方法註解中的tag
+ * @param clazz @[Subscribe] 或 @ [Produce] 註解中的參數
  * Created by User
  * on 2018/4/15.
  */
