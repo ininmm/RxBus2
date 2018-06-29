@@ -15,7 +15,7 @@ import java.lang.reflect.Method
  * @param method 被 [Produce]  annotation 調用的方法
  * @param thread @Produce 使用的線程
  *
- * Created by User
+ * Created by Michael Lien
  * on 2018/4/17.
  */
 class ProducerEvent(private val target: Any, private val method: Method, private val thread: EventThread) : Event() {

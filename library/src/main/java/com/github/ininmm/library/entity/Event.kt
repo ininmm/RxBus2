@@ -3,7 +3,7 @@ package com.github.ininmm.library.entity
 import java.lang.reflect.InvocationTargetException
 
 /**
- * Created by User
+ * Created by Michael Lien
  * on 2018/4/15.
  */
 abstract class Event {
@@ -14,10 +14,10 @@ abstract class Event {
      * 如果這裡沒有觸發 [InvocationTargetException] ，那這裡就不會觸發 [RuntimeException]
      */
     fun throwRuntimeException(message: String, exception: InvocationTargetException) {
-        throwRuntimeException(message, exception)
+        throwRuntimeError(message, exception)
     }
 
-    private fun throwRuntimeException(message: String, throwable: Throwable) {
+    private fun throwRuntimeError(message: String, throwable: Throwable) {
         val cause = throwable.cause
         throw if (cause != null) {
             RuntimeException("$message: ${cause.message}", cause)

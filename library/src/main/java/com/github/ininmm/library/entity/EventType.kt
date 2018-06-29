@@ -8,7 +8,7 @@ import com.github.ininmm.library.annotation.Subscribe
  *
  * @param tag 方法註解中的tag
  * @param clazz @[Subscribe] 或 @ [Produce] 註解中的參數
- * Created by User
+ * Created by Michael Lien
  * on 2018/4/15.
  */
 class EventType(private val tag: String, private val clazz: Class<*>) {

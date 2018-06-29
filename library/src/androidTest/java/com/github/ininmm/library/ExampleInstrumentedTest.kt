@@ -1,4 +1,4 @@
-package com.github.ininmm.rxbus2
+package com.github.ininmm.library
 
 import android.support.test.InstrumentationRegistry
 import android.support.test.runner.AndroidJUnit4
@@ -9,14 +9,16 @@ import org.junit.runner.RunWith
 /**
  * Instrumented test, which will execute on an Android device.
  *
- * See [testing documentation](http://d.android.com/tools/testing).
+ * @see [Testing documentation](http://d.android.com/tools/testing)
  */
 @RunWith(AndroidJUnit4::class)
 class ExampleInstrumentedTest {
     @Test
+    @Throws(Exception::class)
     fun useAppContext() {
         // Context of the app under test.
         val appContext = InstrumentationRegistry.getTargetContext()
-        assertEquals("com.github.ininmm.rxbus2", appContext.packageName)
+
+        assertEquals("com.github.ininmm.library.test", appContext.packageName)
     }
 }

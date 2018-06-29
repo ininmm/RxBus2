@@ -1,7 +1,7 @@
 package com.github.ininmm.library.entity
 
 /**
- * Created by User
+ * Created by Michael Lien
  * on 2018/4/15.
  */
 /**

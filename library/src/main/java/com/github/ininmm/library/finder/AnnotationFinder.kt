@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 /**
  * 用來尋找 [Produce], [Subscribe] 註解的方法
- * Created by User
+ * Created by Michael Lien
  * on 2018/4/21.
  */
 object AnnotationFinder {
@@ -64,6 +64,7 @@ object AnnotationFinder {
                         val tag = if (tagSize > 0) tags[tagSize - 1].value else TagModel.DEFAULT
                         val type = EventType(tag, parameterClazz)
                         var sourceMethods: MutableSet<SourceMethod>? = subscriberMethods[type]
+
                         if (sourceMethods == null) {
                             sourceMethods = HashSet()
                             subscriberMethods[type] = sourceMethods
@@ -122,9 +123,11 @@ object AnnotationFinder {
         val listenerClass = listener::class.java
         val producersInMethod = HashMap<EventType, ProducerEvent>()
         val methods = ProducersCache[listenerClass]
-        if (methods == null) {
-            loadAnnotatedProducerMethods(listenerClass = listenerClass)
-        }
+
+        methods ?: loadAnnotatedProducerMethods(listenerClass = listenerClass)
+//        if (methods == null) {
+//            loadAnnotatedProducerMethods(listenerClass = listenerClass)
+//        }
 //        var methods = ProducersCache[listenerClass]
 //        if (methods == null) {
 //            methods = HashMap()
@@ -143,14 +146,15 @@ object AnnotationFinder {
     /**
      *  [IFinder.findAllSubscribers] 實作時調用此 function 尋找標記@[Subscribe]的方法
      */
-    fun findAllSubscribers(listener: Any): MutableMap<EventType, MutableSet<SubscriberEvent<*>>> {
+    fun findAllSubscribers(listener: Any): MutableMap<EventType, MutableSet<SubscriberEvent<Any>>> {
         val listenerClass = listener::class.java
-        val subscribersInMethod = HashMap<EventType, MutableSet<SubscriberEvent<*>>>()
+        val subscribersInMethod = HashMap<EventType, MutableSet<SubscriberEvent<Any>>>()
         val methods = SubscribersCache[listenerClass]
 
-        if (methods == null) {
-            loadAnnotatedSubscriberMethods(listenerClass = listenerClass)
-        }
+        methods ?: loadAnnotatedSubscriberMethods(listenerClass = listenerClass)
+//        if (methods == null) {
+//            loadAnnotatedSubscriberMethods(listenerClass = listenerClass)
+//        }
 
         if (methods?.isNotEmpty() == true) {
 //            for (Map.Entry<EventType, Set<SourceMethod>> e : methods.entrySet()) {
@@ -161,10 +165,10 @@ object AnnotationFinder {
 //                subscribersInMethod.put(e.getKey(), subscribers);
 //            }
             methods.entries.forEach { entry ->
-                val subscribers = HashSet<SubscriberEvent<*>>()
+                val subscribers = HashSet<SubscriberEvent<Any>>()
                 entry.value.forEach { sourceMethod ->
 //                    subscribers.add(SubscriberEvent<*>(listener, sourceMethod.method, sourceMethod.thread))
-                    subscribers.add(SubscriberEvent<Any>(listener, sourceMethod.method, sourceMethod.thread))
+                    subscribers.add(SubscriberEvent(listener, sourceMethod.method, sourceMethod.thread))
                 }
                 subscribersInMethod[entry.key] = subscribers
             }

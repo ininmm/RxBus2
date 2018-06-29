@@ -5,13 +5,13 @@ import com.github.ininmm.library.entity.ProducerEvent
 import com.github.ininmm.library.entity.SubscriberEvent
 
 /**
- * Created by User
+ * Created by Michael Lien
  * on 2018/4/21.
  */
 interface IFinder {
     fun findAllProducers(listener: Any): MutableMap<EventType, ProducerEvent>
 
-    fun findAllSubscribers(listener: Any): MutableMap<EventType, MutableSet<SubscriberEvent<*>>>
+    fun findAllSubscribers(listener: Any): MutableMap<EventType, MutableSet<SubscriberEvent<Any>>>
 
     companion object {
         /**
@@ -21,7 +21,7 @@ interface IFinder {
             override fun findAllProducers(listener: Any): MutableMap<EventType, ProducerEvent> =
                     AnnotationFinder.findAllProducers(listener)
 
-            override fun findAllSubscribers(listener: Any): MutableMap<EventType, MutableSet<SubscriberEvent<*>>> =
+            override fun findAllSubscribers(listener: Any): MutableMap<EventType, MutableSet<SubscriberEvent<Any>>> =
                     AnnotationFinder.findAllSubscribers(listener)
         }
     }
