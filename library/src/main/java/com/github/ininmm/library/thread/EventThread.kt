@@ -5,7 +5,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 
 /**
- * Created by User
+ * Created by Michael Lien
  * on 2018/2/11.
  */
 enum class EventThread {

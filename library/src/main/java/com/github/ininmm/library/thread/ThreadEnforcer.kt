@@ -4,7 +4,7 @@ import android.os.Looper
 import com.github.ininmm.library.Bus
 
 /**
- * Created by User
+ * Created by Michael Lien
  * on 2018/2/11.
  * 強制方法類在特定線程執行
  */
