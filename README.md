@@ -2,9 +2,21 @@ RxBus2
 =======
 This is a RxBus using by RxJava2
 
+[![Download](https://api.bintray.com/packages/ininmm/maven/RxBus2/images/download.svg)](https://bintray.com/ininmm/maven/RxBus2/_latestVersion)
+
+## Getting Started
+
+In your `build.gradle`:
+
+```groovy
+dependencies {
+    implementation 'com.github.ininmm:library:1.0.0'
+}
+```
+
 ## Usage
 
-You also need to register and unregister before post something.
+Need to register and unregister before post something.
 
 It is recommended to register in onCreate and unregister in onDestroy:
 ```kotlin
@@ -49,3 +61,5 @@ If you want to post a sticky event, you should use @[Produce](/library/src/main/
     }
 ```
 then receive event by @[Subscribe](/library/src/main/java/com/github/ininmm/library/annotation/Subscribe.kt).
+
+**That's all, you're good to go!**
