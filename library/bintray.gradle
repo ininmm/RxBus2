@@ -1,0 +1,84 @@
+apply plugin: 'com.github.dcendents.android-maven'
+apply plugin: 'com.jfrog.bintray'
+// 這個版本是區分庫版本的，因此當我們需要更新library時記得修改這個版本
+version = "1.0.0"
+group = "com.github.ininmm"
+
+Properties properties = new Properties()
+properties.load(project.rootProject.file('local.properties').newDataInputStream())
+
+def siteUrl = 'https://github.com/ininmm/RxBus2.git'      // 項目的主頁
+def gitUrl = 'https://github.com/ininmm/RxBus2.git'       // Git倉庫的url
+
+def developerId = properties.getProperty("developer.id")
+def developerName = properties.getProperty("developer.name")
+def developerEmail = properties.getProperty("developer.email")
+def bintrayUser = properties.getProperty("bintray.user")
+def bintrayApikey = properties.getProperty("bintray.apikey")
+
+install {
+    repositories.mavenInstaller {
+        // This generates POM.xml with proper parameters
+        pom {
+            project {
+                packaging 'aar'
+                name 'This is a RxBus using by RxJava2'
+                url siteUrl
+                // Set your license
+                licenses {
+                    license {
+                        name 'The Apache Software License, Version 2.0'
+                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+                developers {
+                    developer { // 填寫一些開發者的訊息
+                        id developerId
+                        name developerName
+                        email developerEmail
+                    }
+                }
+                scm {
+                    connection gitUrl
+                    developerConnection gitUrl
+                    url siteUrl
+                }
+            }
+        }
+    }
+}
+
+// 打包 javadoc jar 和 source jar
+task sourcesJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    classifier = 'sources'
+}
+
+task javadoc(type: Javadoc) {
+//    source = android.sourceSets.main.java.srcDirs
+//    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives javadocJar
+    archives sourcesJar
+}
+
+bintray {
+    user = bintrayUser
+    key = bintrayApikey
+    configurations = ['archives']
+    pkg {
+        repo = "maven"      // 這邊是對應jCenter的倉庫名稱
+        name = "RxBus2"    // 發佈到jCenter上的項目名稱
+        websiteUrl = siteUrl
+        vcsUrl = gitUrl
+        licenses = ["Apache-2.0"]
+        publish = true
+    }
+}
