@@ -37,7 +37,7 @@ class SubscriberEvent<T>(private val target: Any,
     var isValid = true
         private set
 
-    private val subject: Subject<T> by lazy { PublishSubject.create<T>().toSerialized() }
+    private lateinit var subject: Subject<T>
 
     /**
      * 如果是無效事件，將會拒絕發送 event
@@ -48,6 +48,7 @@ class SubscriberEvent<T>(private val target: Any,
     }
 
     private fun initObservable() : Disposable {
+        subject = PublishSubject.create<T>().toSerialized()
         return subject.observeOn(EventThread.getScheduler(thread))
                 .subscribe {
                     try {

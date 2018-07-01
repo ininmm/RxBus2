@@ -1,5 +1,6 @@
 package com.github.ininmm.library.finder
 
+import android.util.Log
 import com.github.ininmm.library.annotation.Produce
 import com.github.ininmm.library.annotation.Subscribe
 import com.github.ininmm.library.annotation.TagModel
@@ -30,11 +31,12 @@ object AnnotationFinder {
      * 暫存所有 @[Produce] 及 @[Subscribe] 方法到指定的 EventBus
      */
     private fun loadAnnotatedMethods(listenerClass: Class<*>,
-                             producerMethods: MutableMap<EventType, SourceMethod> = HashMap(),
-                             subscriberMethods: MutableMap<EventType, MutableSet<SourceMethod>> = HashMap()) {
+                                     producerMethods: MutableMap<EventType, SourceMethod> = mutableMapOf(),
+                                     subscriberMethods: MutableMap<EventType, MutableSet<SourceMethod>> = HashMap()) {
 
         run breaking@ {
             listenerClass.declaredMethods.forEach continuing@ { method ->
+                Log.e("loadAnnotatedMethods", method.name)
                 // 忽略橋接方法
                 if (method.isBridge) return@continuing
                 // 如果已設定註解標註
@@ -122,19 +124,20 @@ object AnnotationFinder {
     fun findAllProducers(listener: Any): MutableMap<EventType, ProducerEvent> {
         val listenerClass = listener::class.java
         val producersInMethod = HashMap<EventType, ProducerEvent>()
-        val methods = ProducersCache[listenerClass]
 
-        methods ?: loadAnnotatedProducerMethods(listenerClass = listenerClass)
-//        if (methods == null) {
-//            loadAnnotatedProducerMethods(listenerClass = listenerClass)
-//        }
-//        var methods = ProducersCache[listenerClass]
-//        if (methods == null) {
-//            methods = HashMap()
-//            loadAnnotatedProducerMethods(listenerClass, methods)
-//        }
+        // 注意 Call by value 的陷阱!!!
+        var methods = ProducersCache[listenerClass]
+        if (methods == null) {
+            methods = HashMap()
+            // Java and Kotlin always Call by value
+            // 這裡將 methods 的記憶體位址指向 loadAnnotatedProducerMethods 內的 ProducersCache[listenerClass]
+            // ProducersCache[listenerClass] 再根據記憶體位址取值，還是 Call by value
+            // 但是 ProducersCache[listenerClass] 對此記憶體位址改變數值後
+            // 下面 methods 調用時到同樣的記憶體位址取值，此時裡面的數值已經改變了
+            loadAnnotatedProducerMethods(listenerClass, methods)
+        }
 
-        if (methods?.isNotEmpty() == true) {
+        if (methods.isNotEmpty()) {
             methods.entries.forEach { entry ->
                 val producer = ProducerEvent(listener, entry.value.method, entry.value.thread)
                 producersInMethod[entry.key] = producer
@@ -149,25 +152,17 @@ object AnnotationFinder {
     fun findAllSubscribers(listener: Any): MutableMap<EventType, MutableSet<SubscriberEvent<Any>>> {
         val listenerClass = listener::class.java
         val subscribersInMethod = HashMap<EventType, MutableSet<SubscriberEvent<Any>>>()
-        val methods = SubscribersCache[listenerClass]
+        var methods = SubscribersCache[listenerClass]
 
-        methods ?: loadAnnotatedSubscriberMethods(listenerClass = listenerClass)
-//        if (methods == null) {
-//            loadAnnotatedSubscriberMethods(listenerClass = listenerClass)
-//        }
+        if (methods == null) {
+            methods = HashMap()
+            loadAnnotatedSubscriberMethods(listenerClass = listenerClass)
+        }
 
-        if (methods?.isNotEmpty() == true) {
-//            for (Map.Entry<EventType, Set<SourceMethod>> e : methods.entrySet()) {
-//                Set<SubscriberEvent> subscribers = new HashSet<>();
-//                for (SourceMethod m : e.getValue()) {
-//                subscribers.add(new SubscriberEvent(listener, m.method, m.thread));
-//            }
-//                subscribersInMethod.put(e.getKey(), subscribers);
-//            }
+        if (methods.isNotEmpty()) {
             methods.entries.forEach { entry ->
                 val subscribers = HashSet<SubscriberEvent<Any>>()
                 entry.value.forEach { sourceMethod ->
-//                    subscribers.add(SubscriberEvent<*>(listener, sourceMethod.method, sourceMethod.thread))
                     subscribers.add(SubscriberEvent(listener, sourceMethod.method, sourceMethod.thread))
                 }
                 subscribersInMethod[entry.key] = subscribers
