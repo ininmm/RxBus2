@@ -52,8 +52,14 @@ open class Bus internal constructor(private val enforcer: ThreadEnforcer,
         const val DefaultIdentifier = "default"
     }
 
+    /**
+     * 所有已註冊的 Event subscribers ，利用 EventType 當作索引
+     */
     private val subscribersByType = ConcurrentHashMap<EventType, MutableSet<SubscriberEvent<Any>>>()
 
+    /**
+     * 所有已註冊的 Event producers ，利用 EventType 當作索引
+     */
     private val producersByType = ConcurrentHashMap<EventType, ProducerEvent>()
 
     private val flattenHierarchyCache = ConcurrentHashMap<Class<*>, Set<Class<*>>>()
@@ -69,9 +75,11 @@ open class Bus internal constructor(private val enforcer: ThreadEnforcer,
         enforcer.enforce(this)
 
         val findProducers = finder.findAllProducers(any)
+        // if find Producer
         findProducers.keys.forEach { eventType ->
-            val producer = findProducers[eventType]
-            // producersByType 內如果沒東西就放入最後再將返回值給 previousProducer
+            val producer: ProducerEvent? = findProducers[eventType]
+            // 如果 finder 有找到 Producer，看看 ProducerEvent 是否與 producersByType 內的一致
+            // producersByType 內如果沒東西就放入，最後再將返回值給 previousProducer
             val previousProducer = producer?.let { producersByType.putIfAbsent(eventType, it) }
             // 檢查 previous 是否存在
             if (previousProducer != null) {
@@ -80,6 +88,7 @@ open class Bus internal constructor(private val enforcer: ThreadEnforcer,
                         "but already registered by type ${previousProducer.getTarget()::class.java}.")
             }
 
+            // 檢查 subscribersByType 是否有 subscriber
             subscribersByType[eventType]?.let { subscribers ->
                 if (subscribers.isNotEmpty()) {
                     subscribers.forEach { subscriber ->
@@ -90,23 +99,32 @@ open class Bus internal constructor(private val enforcer: ThreadEnforcer,
         }
 
         val findSubscribersMap = finder.findAllSubscribers(any)
+        // if find Subscriber
         findSubscribersMap.keys.forEach { eventType ->
-            var subscribers = subscribersByType[eventType]
-            subscribers ?: run {
+            var subscribers: MutableSet<SubscriberEvent<Any>>? = subscribersByType[eventType]
+            // 如果 finder 有找到 Subscriber，看看 SubscriberEvent 是否與 subscribersByType 內的一致
+            // subscribersByType 內如果沒東西就放入一組新的Set<SubscriberEvent>，最後再將返回值給 subscribers
+            if (subscribers == null) {
+                // CopyOnWriteArraySet 建立一個安全並發的 Set
+                // bonus : 並發 & 並行
                 val subscribersCreation = CopyOnWriteArraySet<SubscriberEvent<Any>>()
                 subscribers = subscribersByType.putIfAbsent(eventType, subscribersCreation) ?: subscribersCreation
             }
 
             val findSubscribers = findSubscribersMap[eventType]
-            if (findSubscribers?.let { return@let subscribers?.addAll(it) == true } != true) {
+            // if (!subscribers.addAll(findSubscribers))
+            // 將 findSubscribers 加入到 subscribers，如果 Set 內已有此元素則不加入並返回 false
+            if (findSubscribers?.let { subscribers.addAll(it) }?.not() == false) {
                 throw IllegalArgumentException("Object already registered.")
             }
         }
 
         findSubscribersMap.entries.forEach { entry ->
             val type = entry.key
+            // 如果 finder 有找到 Subscriber，看看 producersByType 內有沒有需要發出的事件
             val producer = producersByType[type]
             if (producer?.isValid == true) {
+                // 取出 SubscriberEvent 並根據 Producer 分發
                 val subscriberEvents = entry.value
                 subscriberEvents.forEach { subscribeEvent ->
                     if (subscribeEvent.isValid) {
@@ -125,6 +143,7 @@ open class Bus internal constructor(private val enforcer: ThreadEnforcer,
         enforcer.enforce(this)
 
         val producersInListener = finder.findAllProducers(any)
+        // if find Producer
         producersInListener.entries.forEach { entry ->
 
             val key: EventType = entry.key
@@ -140,6 +159,7 @@ open class Bus internal constructor(private val enforcer: ThreadEnforcer,
         }
 
         val subscribersInListener = finder.findAllSubscribers(any)
+        // if find Subscriber
         subscribersInListener.entries.forEach { entry ->
 
             //從 subscribersByType 清單找出當前註冊的 Event
@@ -159,17 +179,6 @@ open class Bus internal constructor(private val enforcer: ThreadEnforcer,
 
             currentSubscribers.removeAll(eventMethodsInListener)
         }
-    }
-
-    /**
-     * 將事件傳給所有訂閱者。無論是否有錯誤都會返回
-     * 注意要發送的 [event] 及其父類
-     *
-     * 如果沒有任何已經訂閱的訂閱者。則將會轉為 [DeadEvent]，並發送
-     * @param event 要傳送的物件
-     */
-    fun post(event: Any) {
-        post(TagModel.DEFAULT, event = event)
     }
 
     /**
@@ -199,7 +208,7 @@ open class Bus internal constructor(private val enforcer: ThreadEnforcer,
         }
 
         if (!dispatched && event !is DeadEvent) {
-            post(DeadEvent(this, event))
+            post(event = DeadEvent(this, event))
         }
     }
 
