@@ -39,14 +39,13 @@ import kotlin.collections.HashSet
  *    SubscriberEvent 中調用 Rx 分發管理
  * Created by Michael Lien
  * on 2018/2/11.
+ * @param enforcer 用於切換線程; 預設 [ThreadEnforcer.MAIN] 則不能切換
+ * @param identifier 標籤，用來辨識此 Bus
+ * @param finder 調用 [IFinder.Annotated] 實做 [IFinder] 以尋找註解方法，再封裝成 [SubscriberEvent] 及 [ProducerEvent]
  */
-open class Bus internal constructor(private val enforcer: ThreadEnforcer,
-                                    private val identifier: String,
-                                    private val finder: IFinder) {
-    constructor(identifier: String = DefaultIdentifier) : this(ThreadEnforcer.MAIN, identifier)
-
-    constructor(enforcer: ThreadEnforcer, identifier: String = DefaultIdentifier) : this(enforcer, identifier, IFinder.Annotated)
-
+open class Bus internal constructor(private val enforcer: ThreadEnforcer = ThreadEnforcer.MAIN,
+                                    private val identifier: String = DefaultIdentifier,
+                                    private val finder: IFinder = IFinder.Annotated) {
 
     companion object {
         const val DefaultIdentifier = "default"
@@ -223,6 +222,11 @@ open class Bus internal constructor(private val enforcer: ThreadEnforcer,
         }
     }
 
+    /**
+     * 讓 [Produce] 可以被自己的 [Subscribe] 分發給訂閱者，注意是一個非同步方法
+     * @param subscriberEvent 自己的 [SubscriberEvent]，準備實際開始分發
+     * @param producer 讓 [ProducerEvent.produce] 可以開始分發
+     */
     private fun dispatchProducerResult(subscriberEvent: SubscriberEvent<Any>, producer: ProducerEvent) {
         producer.produce().subscribe {
             dispatch(it, subscriberEvent)
@@ -252,22 +256,25 @@ open class Bus internal constructor(private val enforcer: ThreadEnforcer,
     fun getSubscribersForEventType(type: EventType) = subscribersByType[type]
 
     /**
-     * 將 class 轉成 一個 set 組成的類別
+     * 檢查 [flattenHierarchyCache] 是否存在該 event 的集合
      */
     fun flattenHierarchy(concreteClass: Class<*>): Set<Class<*>> {
         var classes: Set<Class<*>>? = flattenHierarchyCache[concreteClass]
+        if (classes != null) return classes
 
+        val classesCreation: Set<Class<*>> = getClassesFor(concreteClass)
+        classes = flattenHierarchyCache.putIfAbsent(concreteClass, classesCreation)
+        // 真的還是空的
         if (classes == null) {
-            val classesCreation: Set<Class<*>> = getClassesFor(concreteClass)
-            classes = flattenHierarchyCache.putIfAbsent(concreteClass, classesCreation)
-            // 真的還是空的
-            if (classes == null) {
-                classes = classesCreation
-            }
+            classes = classesCreation
         }
+
         return classes
     }
 
+    /**
+     * 工具方法，尋找一個類的所有父類，包括自己，並存成 Set<Class<>>
+     */
     private fun getClassesFor(concreteClass: Class<*>): Set<Class<*>> {
         val parents = LinkedList<Class<*>>()
         val classes = HashSet<Class<*>>()
